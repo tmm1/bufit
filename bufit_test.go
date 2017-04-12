@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func exampleBytes() {
+func ExampleWriter() {
 	buf := newWriter(make([]byte, 0, 10))
 	io.Copy(os.Stdout, buf)
 	io.Copy(os.Stdout, io.NewSectionReader(*&buf, 0, 100))
@@ -167,23 +167,10 @@ func TestQuitReader(t *testing.T) {
 
 func TestQuitWriter(t *testing.T) {
 	buf := New()
-
-	wait := make(chan struct{})
-	go func() {
-		for {
-			_, err := io.WriteString(buf, ".")
-			if err != nil {
-				break
-			}
-		}
-		close(wait)
-	}()
-
 	buf.Close()
-	select {
-	case <-wait:
-	case <-time.After(100 * time.Millisecond):
-		t.Error("timed out waiting for Writer to Close")
+	_, err := io.WriteString(buf, ".")
+	if err != io.ErrClosedPipe {
+		t.Errorf("Writer after Close expected io.ErrClosedPipe but got %v", err)
 	}
 }
 
